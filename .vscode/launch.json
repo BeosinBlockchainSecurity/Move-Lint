@@ -7,21 +7,6 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "move ast",
-            "cargo": {
-                "args": [
-                    "build",
-                ]
-            },
-            "args": [
-                "-p",
-                "/Users/edz/Documents/GitHub/move/language/documentation/tutorial/step_4/BasicCoin"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
             "name": "move-lint Detector1",
             "cargo": {
                 "args": [
