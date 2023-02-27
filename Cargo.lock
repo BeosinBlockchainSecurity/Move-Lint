@@ -872,30 +872,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "move-ast"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bcs",
- "clap",
- "move-abigen",
- "move-command-line-common",
- "move-compiler",
- "move-core-types",
- "move-docgen",
- "move-ir-types",
- "move-model",
- "move-package",
- "move-symbol-pool",
- "named-lock",
- "once_cell",
- "petgraph 0.5.1",
- "serde 1.0.152",
- "serde_json",
- "whoami",
-]
-
-[[package]]
 name = "move-binary-format"
 version = "0.0.3"
 source = "git+https://github.com/move-language/move?rev=f976503ec92e6942eac1c05dd8231918d07e0af6#f976503ec92e6942eac1c05dd8231918d07e0af6"
@@ -1118,6 +1094,30 @@ dependencies = [
  "move-symbol-pool",
  "once_cell",
  "serde 1.0.152",
+]
+
+[[package]]
+name = "move-lint"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bcs",
+ "clap",
+ "move-abigen",
+ "move-command-line-common",
+ "move-compiler",
+ "move-core-types",
+ "move-docgen",
+ "move-ir-types",
+ "move-model",
+ "move-package",
+ "move-symbol-pool",
+ "named-lock",
+ "once_cell",
+ "petgraph 0.5.1",
+ "serde 1.0.152",
+ "serde_json",
+ "whoami",
 ]
 
 [[package]]
