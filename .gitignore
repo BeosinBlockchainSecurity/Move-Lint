@@ -1,5 +1,5 @@
 /target
-/output
+**/output
 **/build
 
 **/.DS_Store

@@ -19,5 +19,6 @@ pub fn reroot_path(path: Option<PathBuf>) -> anyhow::Result<PathBuf> {
 }
 
 pub fn main(path: Option<PathBuf>, config: config::AstBuildConfig) -> anyhow::Result<compiled_ast::CompiledAst> {
-    build::main(path, config)
+    build::ast(path, config)
+    // build::main(path, config)
 }

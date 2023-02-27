@@ -107,28 +107,15 @@ pub fn ast(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst>
 }
 
 pub fn main(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst> {
-    match ast(path, config) {
-        Ok(ast) => {
-
-            let data =format!("{:#?}", ast);
-            // let data: String = format!("{:#?}", ast.full_ast.parser);
-
-            // println!("{data}");
-
-            let p = std::path::Path::new("/Users/edz/Documents/GitLab/move-ast/output").join("ast.json");
+    ast(path, config).and_then(|ast| {
+        let data =format!("{:#?}", ast);
+            let p = ast.package_root.join("output").join("ast.json");
+            std::fs::create_dir_all(&p.parent().unwrap())?;
             let mut writer = std::fs::File::create(p).expect("Open error: {p}");
             writer.write(data.as_bytes()).unwrap();
 
             Ok(ast)
-        },
-        Err(err) => {
-            // let mut w = std::io::stderr();
-            // w.write(buf)
-            // eprintln!("{:#?}", err);
-            // std::process::exit(1);
-            Err(err)
-        }
-    }
+    })
 }
 
 // pub struct Build;
