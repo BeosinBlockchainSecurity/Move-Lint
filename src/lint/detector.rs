@@ -1,6 +1,7 @@
+use serde::Serialize;
 use anyhow::Result;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub enum DetectorLevel {
     Error,
     Warning,

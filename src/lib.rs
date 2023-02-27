@@ -25,6 +25,10 @@ pub struct Config {
     /// Lint options
     #[clap(flatten)]
     pub lint_config: LintConfig,
+
+    /// Print results as json if available.
+    #[clap(long = "json", short = 'j', global = true)]
+    pub json: bool,
 }
 
 pub fn gen_move_ast(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst> {

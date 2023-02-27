@@ -1,6 +1,7 @@
+use serde::{ser::{self, SerializeStruct, SerializeSeq}, Serialize};
 use super::{Ast, DetectorInfo, DetectorLevel};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct IssueInfo {
     pub no: u16,
     pub wiki: String,
@@ -39,7 +40,7 @@ impl IssueInfo {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct IssueLoc {
     pub file: String,
     pub start: u32,
@@ -105,12 +106,48 @@ impl PartialEq for Issue {
     }
 }
 
+impl ser::Serialize for Issue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+        let mut s = serializer.serialize_struct("Issue", 10)?;
+        // info
+        s.serialize_field("no", &self.info.no)?;
+        s.serialize_field("wiki", &self.info.wiki)?;
+        s.serialize_field("title", &self.info.title)?;
+        s.serialize_field("verbose", &self.info.verbose)?;
+        s.serialize_field("level", &self.info.level)?;
+        s.serialize_field("description", &self.info.description)?;
+        // local
+        s.serialize_field("file", &self.loc.file)?;
+        s.serialize_field("start", &self.loc.start)?;
+        s.serialize_field("end", &self.loc.end)?;
+        s.serialize_field("lines", &self.loc.lines)?;
+        s.end()
+    }
+}
+
 #[derive(Debug)]
 pub struct Issues(Vec<Issue>);
+impl ser::Serialize for Issues {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+        let mut seq = serializer.serialize_seq(Some(self.len()))?;
+        for element in &self.0 {
+            seq.serialize_element(element)?;
+        }
+        seq.end()
+    }
+}
 
 impl Issues {
     pub fn new() -> Self {
         Self(vec![])
+    }
+
+    pub fn to_vec(&self) -> Vec<&Issue> {
+        self.0.iter().map(|i|i).collect::<Vec<_>>()
     }
 
     pub fn contains(&self, x: &Issue) -> bool {
@@ -134,10 +171,6 @@ impl Issues {
 
     pub fn iter(&self) -> core::slice::Iter<Issue> {
         self.0.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<Issue> {
-        self.0.iter_mut()
     }
 
     pub fn sort_by<F>(&mut self, compare: F)

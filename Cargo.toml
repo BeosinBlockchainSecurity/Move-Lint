@@ -20,6 +20,7 @@ named-lock = "0.2.0"
 whoami = { version = "1.2.1" }
 petgraph = "0.5.1"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 move-package = { git = "https://github.com/move-language/move", subdir = "language/tools/move-package", rev = "f976503ec92e6942eac1c05dd8231918d07e0af6" }
 move-core-types = { git = "https://github.com/move-language/move", subdir = "language/move-core/types", rev = "f976503ec92e6942eac1c05dd8231918d07e0af6" }

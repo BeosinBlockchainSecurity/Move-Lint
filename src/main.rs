@@ -17,5 +17,15 @@ fn main() {
             std::process::exit(1);
         }
     };
-    println!("{:#?}", issues);
+    if args.json {
+        match serde_json::to_string(&issues.to_vec()) {
+            Ok(s) => println!("{s}"),
+            Err(err) => {
+                eprintln!("{:#?}", err);
+                std::process::exit(1);
+            }
+        };
+    } else {
+        println!("{:#?}", issues);
+    }
 }
