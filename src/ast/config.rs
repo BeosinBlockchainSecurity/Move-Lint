@@ -11,7 +11,7 @@ use move_package::{Architecture, BuildConfig};
 
 #[derive(Debug, Parser, Clone, Serialize, Deserialize, Eq, PartialEq, PartialOrd, Default)]
 #[clap(author, version, about)]
-pub struct AstBuildConfig {
+pub struct AstConfig {
     /// Compile in 'dev' mode. The 'dev-addresses' and 'dev-dependencies' fields will be used if
     /// this flag is set. This flag is useful for development of packages that expose named
     /// addresses that are not set to a specific value.
@@ -59,20 +59,26 @@ pub struct AstBuildConfig {
     pub skip_fetch_latest_git_deps: bool,
 }
 
-impl AstBuildConfig {
+impl AstConfig {
     pub fn get_meta(&self) -> BuildConfig {
+        // 使用序列化
+        // if let Ok(v1) = serde_json::to_value(&self) {
+        //     if let Ok(v2) = serde_json::from_value::<BuildConfig>(v1) {
+        //         return v2;
+        //     }
+        // }
         BuildConfig {
-            dev_mode: self.dev_mode.clone(),
-            test_mode: self.test_mode.clone(),
-            generate_docs: self.generate_docs.clone(),
-            generate_abis: self.generate_abis.clone(),
+            dev_mode: self.dev_mode,
+            test_mode: self.test_mode,
+            generate_docs: self.generate_docs,
+            generate_abis: self.generate_abis,
             install_dir: self.install_dir.clone(),
-            force_recompilation: self.force_recompilation.clone(),
+            force_recompilation: self.force_recompilation,
             lock_file: self.lock_file.clone(),
             additional_named_addresses: self.additional_named_addresses.clone(),
-            architecture: self.architecture.clone(),
-            fetch_deps_only: self.fetch_deps_only.clone(),
-            skip_fetch_latest_git_deps: self.skip_fetch_latest_git_deps.clone(),
+            architecture: self.architecture,
+            fetch_deps_only: self.fetch_deps_only,
+            skip_fetch_latest_git_deps: self.skip_fetch_latest_git_deps,
         }
     }
 }

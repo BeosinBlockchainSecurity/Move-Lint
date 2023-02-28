@@ -1,20 +1,20 @@
 mod config;
 mod context;
-mod detectors;
 mod detector;
+mod detectors;
 mod issue;
 
-use crate::ast::compiled_ast::CompiledAst as Ast;
-use detectors::Detectors;
+use crate::ast::PackageAst as Ast;
 
-pub use config::LintConfig;
-pub use context::Context;
-pub use detector::{DetectorLevel, DetectorInfo, Detector};
-pub use issue::{IssueInfo, IssueLoc, Issue, Issues};
+pub use self::config::LintConfig;
+pub use self::context::Context;
+pub use self::detector::{DetectorLevel, DetectorInfo, Detector};
+pub use self::detectors::{AbstractDetector, Detectors};
+pub use self::issue::{IssueInfo, IssueLoc, Issue, Issues};
 
-pub fn main(config: LintConfig, ast: &Ast) -> anyhow::Result<Context> {
+pub fn main(config: LintConfig, ast: &Ast, detectors: Option<Detectors>) -> anyhow::Result<Context> {
     let mut context = Context::new(config);
-    if let Err(err) = context.lint(ast, None) {
+    if let Err(err) = context.lint(ast, detectors) {
         return Err(err);
     }
     anyhow::Ok(context)

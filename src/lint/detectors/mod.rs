@@ -14,7 +14,7 @@ type DetectorLevel = _DetectorLevel;
 type DetectorInfo = _DetectorInfo;
 type Detector = _Detector;
 
-trait AbstractDetector {
+pub trait AbstractDetector {
     fn info() -> DetectorInfo;
     fn detector() -> Detector {
         Detector::new(Self::info(), Self::detect)

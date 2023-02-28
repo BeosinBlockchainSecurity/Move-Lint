@@ -4,7 +4,7 @@ pub mod lint;
 use std::path::PathBuf;
 use anyhow::Result;
 use clap::Parser;
-use ast::{config::AstBuildConfig, compiled_ast::CompiledAst};
+use ast::{AstConfig, PackageAst};
 use lint::{LintConfig};
 
 #[derive(Debug, Parser)]
@@ -20,7 +20,7 @@ pub struct Config {
 
     /// Package build options
     #[clap(flatten)]
-    pub build_config: AstBuildConfig,
+    pub build_config: AstConfig,
 
     /// Lint options
     #[clap(flatten)]
@@ -31,10 +31,10 @@ pub struct Config {
     pub json: bool,
 }
 
-pub fn gen_move_ast(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst> {
+pub fn gen_move_ast(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
     ast::main(path, config)
 }
 
-pub fn move_lint(config: lint::LintConfig, ast: &CompiledAst) -> Result<lint::Issues> {
-    lint::main(config, ast).and_then(|c| Ok(c.issues))
+pub fn move_lint(config: lint::LintConfig, ast: &PackageAst) -> Result<lint::Issues> {
+    lint::main(config, ast, None).and_then(|c| Ok(c.issues))
 }

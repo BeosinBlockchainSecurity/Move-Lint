@@ -9,19 +9,19 @@ use move_package::{
     source_package::parsed_manifest::PackageName,
     resolution::resolution_graph::ResolvedGraph,
 };
-use super::reroot_path;
-use super::compiled_ast::CompiledAst;
-use super::config::AstBuildConfig;
+use move_package::source_package::layout::SourcePackageLayout;
+use super::core::PackageAst;
+use super::config::AstConfig;
 
 /// BuildPlan
 use petgraph::algo::toposort;
-struct AstBuildPlan {
+struct BuildPlan {
     root: PackageName,
     _sorted_deps: Vec<PackageName>,
     resolution_graph: ResolvedGraph,
 }
 
-impl AstBuildPlan {
+impl BuildPlan {
     fn create(resolution_graph: ResolvedGraph) -> Result<Self> {
         let mut sorted_deps = match toposort(&resolution_graph.graph, None) {
             Ok(nodes) => nodes,
@@ -40,7 +40,7 @@ impl AstBuildPlan {
         })
     }
 
-    fn compile_ast(&self) -> Result<CompiledAst> {
+    fn compile_ast(&self) -> Result<PackageAst> {
         let root_package = &self.resolution_graph.package_table[&self.root];
         let immediate_dependencies_names =
             root_package.immediate_dependencies(&self.resolution_graph);
@@ -65,7 +65,7 @@ impl AstBuildPlan {
             })
             .collect();
 
-        let compiled = CompiledAst::build_all(
+        let compiled = PackageAst::build_all(
             root_package.clone(),
             transitive_dependencies,
             &self.resolution_graph,
@@ -77,22 +77,30 @@ impl AstBuildPlan {
 
 /// BuildConfig
 use super::lock::PackageLock;
-trait TraitAstBuildConfig {
-    fn compile_ast<W: Write>(self, path: &Path, writer: &mut W) -> Result<CompiledAst>;
+trait TraitAstConfig {
+    fn compile_ast<W: Write>(self, path: &Path, writer: &mut W) -> Result<PackageAst>;
 }
 
-impl TraitAstBuildConfig for BuildConfig {
-    fn compile_ast<W: Write>(self, path: &Path, writer: &mut W) -> Result<CompiledAst> {
+impl TraitAstConfig for BuildConfig {
+    fn compile_ast<W: Write>(self, path: &Path, writer: &mut W) -> Result<PackageAst> {
         let resolved_graph = self.resolution_graph_for_package(path, writer)?;
         let mutx = PackageLock::lock();
-        let ret = AstBuildPlan::create(resolved_graph)?.compile_ast();
+        let ret = BuildPlan::create(resolved_graph)?.compile_ast();
         mutx.unlock();
         ret
     }
 }
 
-/// Main
-pub fn ast(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst> {
+fn reroot_path(path: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+    let path = path.unwrap_or_else(|| PathBuf::from("."));
+    // Always root ourselves to the package root, and then compile relative to that.
+    let rooted_path = SourcePackageLayout::try_find_root(&path.canonicalize()?)?;
+    std::env::set_current_dir(&rooted_path).unwrap();
+
+    Ok(PathBuf::from("."))
+}
+
+pub fn build_ast(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
     let config = config.get_meta();
     let rerooted_path = reroot_path(path)?;
     let architecture = config.architecture.unwrap_or(Architecture::Move);
@@ -106,8 +114,8 @@ pub fn ast(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst>
     }
 }
 
-pub fn main(path: Option<PathBuf>, config: AstBuildConfig) -> Result<CompiledAst> {
-    ast(path, config).and_then(|ast| {
+pub fn _main(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
+    build_ast(path, config).and_then(|ast| {
         let data =format!("{:#?}", ast);
             let p = ast.package_root.join("output").join("ast.json");
             std::fs::create_dir_all(&p.parent().unwrap())?;

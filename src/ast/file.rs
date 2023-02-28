@@ -42,7 +42,6 @@ impl FileSource {
 }
 
 #[derive(Debug, Clone)]
-// pub struct FileSources(diagnostics::FilesSourceText);
 pub struct FileSources(HashMap<FileHash, FileSource>);
 
 impl FileSources {

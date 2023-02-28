@@ -17,7 +17,7 @@ fn main() {
         }
     };
     if args.json {
-        match serde_json::to_string(&issues.to_vec()) {
+        match serde_json::to_string(&issues) {
             Ok(s) => println!("{s}"),
             Err(err) => {
                 eprintln!("{:#?}", err);

@@ -1,25 +1,16 @@
 use std::{
-    path::{Path, PathBuf},
+    path::PathBuf,
     collections::{BTreeMap, BTreeSet},
 };
 use anyhow::Result;
 use move_command_line_common::{
     env::get_bytecode_version_from_env,
-    files::{
-        extension_equals, find_filenames,
-    },
 };
 use move_model::{model::GlobalEnv, options::ModelBuilderOptions, run_model_builder_with_options};
 use move_abigen::{Abigen, AbigenOptions};
-use move_docgen::{Docgen, DocgenOptions};
 use move_package::{
-    source_package::{
-        layout::{SourcePackageLayout, REFERENCE_TEMPLATE_FILENAME},
-        parsed_manifest::PackageName,
-    },
     resolution::resolution_graph::{ResolvedPackage, ResolvedTable, ResolvedGraph, Renaming},
     compilation::{
-        package_layout::CompiledPackageLayout,
         compiled_package::{CompiledPackageInfo, CompiledUnitWithSource},
     },
 };
@@ -52,22 +43,20 @@ pub struct FullyAst {
     pub compiled: Vec<compiled_unit::AnnotatedCompiledUnit>,
 }
 
-
 /// CompiledPackage
 #[derive(Debug, Clone)]
-pub struct CompiledAst {
+pub struct PackageAst {
     pub package_root: PathBuf,
     pub install_root: PathBuf,
     pub files: FileSources,
     pub package_info: CompiledPackageInfo,
     pub full_ast: FullyAst,
-    pub docs: Option<Vec<(String, String)>>,
     /// filename -> json bytes for ScriptABI. Can then be used to generate transaction builders in
     /// various languages.
     pub abis: Option<Vec<(String, Vec<u8>)>>,
 }
 
-impl CompiledAst {
+impl PackageAst {
     pub fn build_all(
         resolved_package: ResolvedPackage,
         transitive_dependencies: Vec<(
@@ -78,11 +67,6 @@ impl CompiledAst {
         )>,
         resolution_graph: &ResolvedGraph,
     ) -> Result<Self> {
-        let immediate_dependencies = transitive_dependencies
-            .iter()
-            .filter(|(_, is_immediate, _, _)| *is_immediate)
-            .map(|(name, _, _, _)| *name)
-            .collect::<Vec<_>>();
         let transitive_dependencies = transitive_dependencies
             .into_iter()
             .map(|(name, _is_immediate, source_paths, address_mapping)| {
@@ -97,18 +81,13 @@ impl CompiledAst {
             &resolved_package,
             transitive_dependencies,
         )?;
-        let flags = if resolution_graph.build_options.test_mode {
-            Flags::testing()
-        } else {
-            Flags::empty()
-        };
         let mut paths = deps_package_paths.clone();
         paths.push(sources_package_paths.clone());
 
         let fully_compiled_program = match CompilerModule::construct_pre_compiled_lib(
             paths,
             None,
-            flags,
+            Flags::empty(),
         )? {
             Ok(p) => p,
             Err((files, diags)) => {
@@ -137,26 +116,13 @@ impl CompiledAst {
             }
         }
 
-        let mut compiled_docs = None;
         let mut compiled_abis = None;
-        if resolution_graph.build_options.generate_docs
-            || resolution_graph.build_options.generate_abis
-        {
+        if resolution_graph.build_options.generate_abis {
             let model = run_model_builder_with_options(
                 vec![sources_package_paths],
                 deps_package_paths,
                 ModelBuilderOptions::default(),
             )?;
-
-            if resolution_graph.build_options.generate_docs {
-                compiled_docs = Some(Self::build_docs(
-                    resolved_package.source_package.package.name,
-                    &model,
-                    &resolved_package.package_path,
-                    &immediate_dependencies,
-                    &resolution_graph.build_options.install_dir,
-                ));
-            }
 
             if resolution_graph.build_options.generate_abis {
                 compiled_abis = Some(Self::build_abis(
@@ -193,66 +159,10 @@ impl CompiledAst {
                 cfgir: fully_compiled_program.cfgir,
                 compiled: fully_compiled_program.compiled,
             },
-            // root_compiled_units,
-            // deps_compiled_units,
-            docs: compiled_docs,
             abis: compiled_abis,
         };
 
         Ok(compiled_ast)
-    }
-
-    fn build_docs(
-        package_name: PackageName,
-        model: &GlobalEnv,
-        package_root: &Path,
-        deps: &[PackageName],
-        install_dir: &Option<PathBuf>,
-    ) -> Vec<(String, String)> {
-        let root_doc_templates = find_filenames(
-            &[package_root
-                .join(SourcePackageLayout::DocTemplates.path())
-                .to_string_lossy()
-                .to_string()],
-            |path| extension_equals(path, "md"),
-        )
-        .unwrap_or_else(|_| vec![]);
-        let root_for_docs = if let Some(install_dir) = install_dir {
-            install_dir.join(CompiledPackageLayout::Root.path())
-        } else {
-            CompiledPackageLayout::Root.path().to_path_buf()
-        };
-        let dep_paths = deps
-            .iter()
-            .map(|dep_name| {
-                root_for_docs
-                    .join(dep_name.as_str())
-                    .join(CompiledPackageLayout::CompiledDocs.path())
-                    .to_string_lossy()
-                    .to_string()
-            })
-            .collect();
-        let in_pkg_doc_path = root_for_docs
-            .join(package_name.as_str())
-            .join(CompiledPackageLayout::CompiledDocs.path());
-        let references_path = package_root
-            .join(SourcePackageLayout::DocTemplates.path())
-            .join(REFERENCE_TEMPLATE_FILENAME);
-        let references_file = if references_path.exists() {
-            Some(references_path.to_string_lossy().to_string())
-        } else {
-            None
-        };
-        let doc_options = DocgenOptions {
-            doc_path: dep_paths,
-            output_directory: in_pkg_doc_path.to_string_lossy().to_string(),
-            root_doc_templates,
-            compile_relative_to_output_dir: true,
-            references_file,
-            ..DocgenOptions::default()
-        };
-        let docgen = Docgen::new(model, &doc_options);
-        docgen.gen()
     }
 
     fn build_abis(
@@ -284,7 +194,7 @@ impl CompiledAst {
     }
 }
 
-pub(crate) fn named_address_mapping_for_compiler(
+fn named_address_mapping_for_compiler(
     resolution_table: &ResolvedTable,
 ) -> BTreeMap<Symbol, NumericalAddress> {
     resolution_table
@@ -297,7 +207,7 @@ pub(crate) fn named_address_mapping_for_compiler(
         .collect::<BTreeMap<_, _>>()
 }
 
-pub(crate) fn apply_named_address_renaming(
+fn apply_named_address_renaming(
     current_package_name: Symbol,
     address_resolution: BTreeMap<Symbol, NumericalAddress>,
     renaming: &Renaming,
@@ -322,7 +232,7 @@ pub(crate) fn apply_named_address_renaming(
         .collect()
 }
 
-pub(crate) fn make_source_and_deps_for_compiler(
+fn make_source_and_deps_for_compiler(
     resolution_graph: &ResolvedGraph,
     root: &ResolvedPackage,
     deps: Vec<(
