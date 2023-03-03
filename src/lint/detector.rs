@@ -57,3 +57,39 @@ impl Detector {
         &self.detected
     }
 }
+
+//**************************************************************************************************
+// Display
+//**************************************************************************************************
+
+impl DetectorLevel {
+    pub const ERROR: &'static str = "Error";
+    pub const WARNING: &'static str = "Warning";
+    pub const INFO: &'static str = "Info";
+    pub const UNIMPLEMENTED: &'static str = "Unimplemented";
+
+    pub fn form_str(x: &str) -> Option<Self> {
+        match x {
+            Self::ERROR => Some(Self::Error),
+            Self::WARNING => Some(Self::Warning),
+            Self::INFO => Some(Self::Info),
+            Self::UNIMPLEMENTED => Some(Self::Unimplemented),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for DetectorLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Error => Self::ERROR,
+                Self::Warning => Self::WARNING,
+                Self::Info => Self::INFO,
+                Self::Unimplemented => Self::UNIMPLEMENTED,
+            }
+        )
+    }
+}

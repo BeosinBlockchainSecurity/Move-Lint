@@ -25,6 +25,6 @@ fn main() {
             }
         };
     } else {
-        println!("{:#?}", issues);
+        println!("{}", issues);
     }
 }

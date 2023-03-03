@@ -1,7 +1,7 @@
 use serde::{ser::{self, SerializeStruct, SerializeSeq}, Serialize};
 use super::{Ast, DetectorInfo, DetectorLevel};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct IssueInfo {
     pub no: u16,
     pub wiki: String,
@@ -9,21 +9,6 @@ pub struct IssueInfo {
     pub verbose: String,
     pub level: DetectorLevel,
     pub description: Option<String>,
-}
-
-impl PartialEq for IssueInfo {
-    fn eq(&self, other: &Self) -> bool {
-        self.no == other.no &&
-        self.wiki == other.wiki &&
-        self.title == other.title &&
-        self.verbose == other.verbose &&
-        self.level == other.level &&
-        self.description == other.description
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
 }
 
 impl IssueInfo {
@@ -40,25 +25,12 @@ impl IssueInfo {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct IssueLoc {
     pub file: String,
     pub start: u32,
     pub end: u32,
     pub lines: Vec<u32>,
-}
-
-impl PartialEq for IssueLoc {
-    fn eq(&self, other: &Self) -> bool {
-        self.file == other.file &&
-        self.start == other.start &&
-        self.end == other.end &&
-        self.lines == other.lines
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
 }
 
 impl IssueLoc {
@@ -81,7 +53,7 @@ impl IssueLoc {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Issue {
     pub info: IssueInfo,
     pub loc: IssueLoc,
@@ -93,16 +65,6 @@ impl Issue {
             info,
             loc,
         }
-    }
-}
-
-impl PartialEq for Issue {
-    fn eq(&self, other: &Self) -> bool {
-        self.info == other.info && self.loc == other.loc
-    }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
     }
 }
 
@@ -182,5 +144,49 @@ impl Issues {
         F: FnMut(&Issue, &Issue) -> core::cmp::Ordering,
     {
         self.0.sort_by(compare)
+    }
+}
+
+//**************************************************************************************************
+// Display
+//**************************************************************************************************
+
+impl std::fmt::Display for IssueInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "no: {}\nwiki: {}\ntitle: {}\nverbose: {}\nlevel: {}\ndescription: {}",
+            self.no,
+            self.wiki,
+            self.title,
+            self.verbose,
+            self.level,
+            self.description.clone().unwrap_or("None".to_string()),
+        )
+    }
+}
+
+impl std::fmt::Display for IssueLoc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "file: {}\nrange: ({}, {})\nlines: {:?}",
+            self.file,
+            self.start,
+            self.end,
+            self.lines,
+        )
+    }
+}
+
+impl std::fmt::Display for Issue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}\n{}", self.info, self.loc)
+    }
+}
+
+impl std::fmt::Display for Issues {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.iter().map(|i| i.to_string()).fold("".to_string(), |x, y| format!("{x}\n\n\n{y}")))
     }
 }
