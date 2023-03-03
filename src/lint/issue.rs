@@ -154,6 +154,10 @@ impl Issues {
         self.0.contains(x)
     }
 
+    pub fn get(&self, idx: usize) -> &Issue {
+        &self.0[idx]
+    }
+
     pub fn add(&mut self, x: Issue) -> &mut Self {
         if !self.contains(&x) {
             self.0.push(x);

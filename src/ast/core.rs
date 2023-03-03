@@ -133,7 +133,7 @@ impl PackageAst {
             }
         };
 
-        let compiled_ast = Self {
+        let package_ast = Self {
             package_root: if resolution_graph.root_package_path.to_str().unwrap_or("").eq(".") {
                 std::env::current_dir().unwrap_or(resolution_graph.root_package_path.clone())
             } else {
@@ -162,7 +162,7 @@ impl PackageAst {
             abis: compiled_abis,
         };
 
-        Ok(compiled_ast)
+        Ok(package_ast)
     }
 
     fn build_abis(
