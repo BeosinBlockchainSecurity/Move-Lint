@@ -1,5 +1,5 @@
 use move_compiler::expansion::ast as AST2;
-use move_compiler::naming::ast as AST;
+use move_compiler::naming::ast as AST3;
 use move_ir_types::sp;
 
 pub struct Detector2<'a> {
@@ -26,34 +26,35 @@ impl<'a> Detector2<'a> {
         anyhow::Ok(())
     }
 
-    fn parse_func(&mut self, func: &AST::Function) {
+    fn parse_func(&mut self, func: &AST3::Function) {
         match &func.body.value {
-            AST::FunctionBody_::Defined(block) => {
+            AST3::FunctionBody_::Defined(block) => {
                 self.parse_func_block(block);
             },
-            AST::FunctionBody_::Native => (),
+            AST3::FunctionBody_::Native => (),
         }
     }
 
-    fn parse_func_block(&mut self, block: &AST::Sequence) {
+    fn parse_func_block(&mut self, block: &AST3::Sequence) {
         for seq in block {
             match &seq.value {
-                AST::SequenceItem_::Seq(exp) => {
+                AST3::SequenceItem_::Bind(_, exp) |
+                AST3::SequenceItem_::Seq(exp) => {
                     self.parse_func_exp(exp)
                 },
-                _ => (),
+                AST3::SequenceItem_::Declare(_, _) => (),
             }
         }
     }
 
-    fn parse_func_exp(&mut self, exp: &AST::Exp) {
-        let mut exps: Vec<&AST::Exp> = Vec::new();
+    fn parse_func_exp(&mut self, exp: &AST3::Exp) {
+        let mut exps: Vec<&AST3::Exp> = Vec::new();
         match &exp.value {
-            AST::Exp_::Builtin(func, sp!(_, es)) => {
+            AST3::Exp_::Builtin(func, sp!(_, es)) => {
                 match &func.value {
-                    AST::BuiltinFunction_::Assert(_) => {
+                    AST3::BuiltinFunction_::Assert(_) => {
                         assert!(es.len() == 2);
-                        if let AST::Exp_::Value(arg) = &es[1].value {
+                        if let AST3::Exp_::Value(arg) = &es[1].value {
                             let is_zero = match arg.value {
                                 AST2::Value_::InferredNum(v) |
                                 AST2::Value_::U256(v) => v == move_core_types::u256::U256::zero(),
@@ -72,49 +73,49 @@ impl<'a> Detector2<'a> {
                     _ => (),
                 }
             },
-            AST::Exp_::Block(block) => {
+            AST3::Exp_::Block(block) => {
                 self.parse_func_block(block)
             },
-            AST::Exp_::Pack(_, _, _, vars) => {
-                exps.append(&mut vars.iter().map(|(_, _, (_, e))| e).collect::<Vec<&AST::Exp>>())
+            AST3::Exp_::Pack(_, _, _, vars) => {
+                exps.append(&mut vars.iter().map(|(_, _, (_, e))| e).collect::<Vec<&AST3::Exp>>())
             },
             // Vec<e>
-            AST::Exp_::ModuleCall(_, _, _, sp!(_, es)) |
-            AST::Exp_::Vector(_, _, sp!(_, es)) |
-            AST::Exp_::ExpList(es) => {
-                exps.append(&mut es.iter().collect::<Vec<&AST::Exp>>());
+            AST3::Exp_::ModuleCall(_, _, _, sp!(_, es)) |
+            AST3::Exp_::Vector(_, _, sp!(_, es)) |
+            AST3::Exp_::ExpList(es) => {
+                exps.append(&mut es.iter().collect::<Vec<&AST3::Exp>>());
             },
             // (e1, e2)
-            AST::Exp_::IfElse(_, e1, e2) |
-            AST::Exp_::Mutate(e1, e2) |
-            AST::Exp_::BinopExp(e1, _, e2) => {
+            AST3::Exp_::IfElse(_, e1, e2) |
+            AST3::Exp_::Mutate(e1, e2) |
+            AST3::Exp_::BinopExp(e1, _, e2) => {
                 exps.push(e1);
                 exps.push(e2);
             },
             // e
-            AST::Exp_::Return(e) |
-            AST::Exp_::While(_, e) |
-            AST::Exp_::Loop(e) |
-            AST::Exp_::Assign(_, e) |
-            AST::Exp_::FieldMutate(_, e) |
-            AST::Exp_::Abort(e) |
-            AST::Exp_::Dereference(e) |
-            AST::Exp_::UnaryExp(_, e) |
-            AST::Exp_::Cast(e, _) |
-            AST::Exp_::Annotate(e, _) => exps.push(e),
+            AST3::Exp_::Return(e) |
+            AST3::Exp_::While(_, e) |
+            AST3::Exp_::Loop(e) |
+            AST3::Exp_::Assign(_, e) |
+            AST3::Exp_::FieldMutate(_, e) |
+            AST3::Exp_::Abort(e) |
+            AST3::Exp_::Dereference(e) |
+            AST3::Exp_::UnaryExp(_, e) |
+            AST3::Exp_::Cast(e, _) |
+            AST3::Exp_::Annotate(e, _) => exps.push(e),
             // ()
-            AST::Exp_::Use(_) |
-            AST::Exp_::Constant(_, _) |
-            AST::Exp_::DerefBorrow(_) |
-            AST::Exp_::Borrow(_, _) |
-            AST::Exp_::Value(_) |
-            AST::Exp_::Move(_) |
-            AST::Exp_::Copy(_) |
-            AST::Exp_::Unit{ trailing: _ } |
-            AST::Exp_::Break |
-            AST::Exp_::Continue |
-            AST::Exp_::Spec(_, _) | // sepc
-            AST::Exp_::UnresolvedError => (),
+            AST3::Exp_::Use(_) |
+            AST3::Exp_::Constant(_, _) |
+            AST3::Exp_::DerefBorrow(_) |
+            AST3::Exp_::Borrow(_, _) |
+            AST3::Exp_::Value(_) |
+            AST3::Exp_::Move(_) |
+            AST3::Exp_::Copy(_) |
+            AST3::Exp_::Unit{ trailing: _ } |
+            AST3::Exp_::Break |
+            AST3::Exp_::Continue |
+            AST3::Exp_::Spec(_, _) | // sepc
+            AST3::Exp_::UnresolvedError => (),
         }
         for e in exps {
             self.parse_func_exp(e);
