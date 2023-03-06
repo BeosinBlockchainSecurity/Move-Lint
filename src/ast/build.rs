@@ -117,7 +117,7 @@ pub fn build_ast(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst>
 pub fn _main(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
     build_ast(path, config).and_then(|ast| {
         let data =format!("{:#?}", ast);
-            let p = ast.package_root.join("output").join("ast.json");
+            let p = ast.source_info.path.join("output").join("ast.json");
             std::fs::create_dir_all(&p.parent().unwrap())?;
             let mut writer = std::fs::File::create(p).expect("Open error: {p}");
             writer.write(data.as_bytes()).unwrap();

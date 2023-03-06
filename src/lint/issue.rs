@@ -35,7 +35,7 @@ pub struct IssueLoc {
 
 impl IssueLoc {
     pub fn from(ast: &Ast, loc: &move_ir_types::location::Loc) -> Self {
-        if let Some(f) = ast.files.get_file(&loc.file_hash()) {
+        if let Some(f) = ast.source_info.files.get_file(&loc.file_hash()) {
             let range = loc.usize_range();
             Self {
                 file: f.filename(),

@@ -3,23 +3,19 @@ use std::{
     collections::{BTreeMap, BTreeSet},
 };
 use anyhow::Result;
-use move_command_line_common::{
-    env::get_bytecode_version_from_env,
-};
+use move_command_line_common::env::get_bytecode_version_from_env;
 use move_model::{model::GlobalEnv, options::ModelBuilderOptions, run_model_builder_with_options};
 use move_abigen::{Abigen, AbigenOptions};
 use move_package::{
+    BuildConfig,
     resolution::resolution_graph::{ResolvedPackage, ResolvedTable, ResolvedGraph, Renaming},
-    compilation::{
-        compiled_package::{CompiledPackageInfo, CompiledUnitWithSource},
-    },
+    compilation::compiled_package::CompiledUnitWithSource,
+    source_package::parsed_manifest::SourceManifest,
 };
 use move_symbol_pool::symbol::Symbol;
 use move_compiler::{
     shared::{Flags, NamedAddressMap, NumericalAddress, PackagePaths},
-    command_line::compiler::{
-        self as CompilerModule,
-    },
+    command_line::compiler as CompilerModule,
     diagnostics,
     compiled_unit,
     parser,
@@ -43,13 +39,17 @@ pub struct FullyAst {
     pub compiled: Vec<compiled_unit::AnnotatedCompiledUnit>,
 }
 
-/// CompiledPackage
+#[derive(Debug, Clone)]
+pub struct SourceInfo {
+    pub manifest: SourceManifest,
+    pub path: PathBuf,
+    pub files: FileSources,
+}
+
 #[derive(Debug, Clone)]
 pub struct PackageAst {
-    pub package_root: PathBuf,
-    pub install_root: PathBuf,
-    pub files: FileSources,
-    pub package_info: CompiledPackageInfo,
+    pub source_info: SourceInfo,
+    pub build_options: BuildConfig,
     pub full_ast: FullyAst,
     /// filename -> json bytes for ScriptABI. Can then be used to generate transaction builders in
     /// various languages.
@@ -134,22 +134,16 @@ impl PackageAst {
         };
 
         let package_ast = Self {
-            package_root: if resolution_graph.root_package_path.to_str().unwrap_or("").eq(".") {
-                std::env::current_dir().unwrap_or(resolution_graph.root_package_path.clone())
-            } else {
-                resolution_graph.root_package_path.clone()
+            source_info: SourceInfo {
+                manifest: resolved_package.source_package,
+                path: if resolution_graph.root_package_path.to_str().unwrap_or("").eq(".") {
+                    std::env::current_dir().unwrap_or(resolution_graph.root_package_path.clone())
+                } else {
+                    resolution_graph.root_package_path.clone()
+                },
+                files: FileSources::from(fully_compiled_program.files),
             },
-            install_root: match &resolution_graph.build_options.install_dir {
-                Some(under_path) => under_path.clone(),
-                None => resolution_graph.root_package_path.clone(),
-            },
-            files: FileSources::from(fully_compiled_program.files),
-            package_info: CompiledPackageInfo {
-                package_name: resolved_package.source_package.package.name,
-                address_alias_instantiation: resolved_package.resolution_table,
-                source_digest: Some(resolved_package.source_digest),
-                build_flags: resolution_graph.build_options.clone(),
-            },
+            build_options: resolution_graph.build_options.clone(),
             full_ast: FullyAst {
                 parser: fully_compiled_program.parser,
                 expansion: fully_compiled_program.expansion,
