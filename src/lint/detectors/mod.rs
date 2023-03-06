@@ -29,6 +29,7 @@ mod detector3;
 mod detector4;
 mod detector5;
 mod detector6;
+mod detector7;
 
 pub struct Detectors(Vec<Detector>);
 
@@ -41,6 +42,7 @@ impl Default for Detectors {
             detector4::Detector4::detector(),
             detector5::Detector5::detector(),
             detector6::Detector6::detector(),
+            detector7::Detector7::detector(),
         ])
     }
 }
