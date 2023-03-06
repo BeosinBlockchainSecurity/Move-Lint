@@ -1,24 +1,24 @@
-use std::ops::Deref;
-use std::str::FromStr;
-
-use move_compiler::parser::ast as AST1;
-use move_compiler::expansion::ast as AST2;
-use move_compiler::naming::ast as AST3;
 use move_compiler::typing::ast as AST4;
-use move_ir_types::sp;
+use super::utils;
 
-pub struct Detector5<'a> {
+pub struct Detector6<'a> {
     context: &'a mut super::Context,
     ast: &'a super::Ast,
     meta: &'a mut super::Detector,
+    deprecated_funcs: std::collections::HashSet<String>,
 }
 
-impl<'a> Detector5<'a> {
+impl<'a> Detector6<'a> {
     fn new(context: &'a mut super::Context, ast: &'a super::Ast, detector: &'a mut super::Detector) -> Self {
+        // 停用的函数集合
+        let mut deprecated_funcs = std::collections::HashSet::new();
+        // Todo: leocll，哪些函数已弃用
+        deprecated_funcs.insert(format!("{}::NFT::register", utils::fmt_address_hex("0x1")));
         Self {
             context,
             ast,
             meta: detector,
+            deprecated_funcs,
         }
     }
 
@@ -55,55 +55,14 @@ impl<'a> Detector5<'a> {
     fn parse_func_exp(&mut self, exp: &AST4::Exp) {
         let mut exps: Vec<&AST4::Exp> = Vec::new();
         match &exp.exp.value {
-            AST4::UnannotatedExp_::BinopExp(e1, op, _, e2) => {
-                match &op.value {
-                    AST1::BinOp_::Shl | AST1::BinOp_::Shr => {
-                        // e1 << e2 | e1 >> e2
-                        if let AST3::Type_::Apply(_, sp!(_, AST3::TypeName_::Builtin(sp!(_, typ))), _) = &e1.deref().ty.value {
-                            // e1类型的位数
-                            let v1_bit: Option<u128> = match &typ {
-                                AST3::BuiltinTypeName_::U8 => Some(8),
-                                AST3::BuiltinTypeName_::U16 => Some(16),
-                                AST3::BuiltinTypeName_::U32 => Some(32),
-                                AST3::BuiltinTypeName_::U64 => Some(64),
-                                AST3::BuiltinTypeName_::U128 => Some(128),
-                                AST3::BuiltinTypeName_::U256 => Some(256),
-                                _ => None,
-                            };
-                            if let Some(v1_bit) = v1_bit {
-                                // AST4::UnannotatedExp_::Value 常量节点
-                                // 只能判断常量，变量值无法判断
-                                if let AST4::UnannotatedExp_::Value(v2) = &e2.deref().exp.value {
-                                    let is_overflow = match &v2.value {
-                                        AST2::Value_::InferredNum(v) |
-                                        AST2::Value_::U256(v) => {
-                                            if let Ok(v1_bit_256) = move_core_types::u256::U256::from_str(v1_bit.to_string().as_str()) {
-                                                v >= &v1_bit_256
-                                            } else {
-                                                false
-                                            }
-                                        },
-                                        AST2::Value_::U8(v) => (*v as u128) >= v1_bit,
-                                        AST2::Value_::U16(v) => (*v as u128) >= v1_bit,
-                                        AST2::Value_::U32(v) => (*v as u128) >= v1_bit,
-                                        AST2::Value_::U64(v) => (*v as u128) >= v1_bit,
-                                        AST2::Value_::U128(v) => (*v as u128) >= v1_bit,
-                                        _ => false,
-                                    };
-                                    if is_overflow {
-                                        self.add_issue(&exp.exp.loc);
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    _ => (),
-                }
-                // e1、e2中可能嵌套其他exp
-                exps.push(e1);
-                exps.push(e2);
-            },
             AST4::UnannotatedExp_::ModuleCall(call) => {
+                let account_address = &call.module.value.address.into_addr_bytes().into_inner();
+                let address = account_address.to_canonical_string();
+                let mname = call.module.value.module.to_string();
+                let fname = call.name.to_string();
+                if self.deprecated_funcs.contains(&format!("{address}::{mname}::{fname}")) {
+                    self.add_issue(&exp.exp.loc, format!("{}::{mname}::{fname}", account_address.to_hex_literal()))
+                }
                 exps.push(&call.arguments);
             },
             AST4::UnannotatedExp_::Block(block) => {
@@ -122,6 +81,7 @@ impl<'a> Detector5<'a> {
                 }
             },
             // (e1, e2)
+            AST4::UnannotatedExp_::BinopExp(e1, _, _, e2) |
             AST4::UnannotatedExp_::IfElse(_, e1, e2) |
             AST4::UnannotatedExp_::Mutate(e1, e2) => {
                 exps.push(e1);
@@ -159,26 +119,28 @@ impl<'a> Detector5<'a> {
         }
     }
 
-    fn add_issue(&mut self, loc: &move_ir_types::location::Loc) {
+    fn add_issue(&mut self, loc: &move_ir_types::location::Loc, fname: String) {
+        let mut info = super::IssueInfo::from(&self.meta.info);
+        info.description = Some(format!("函数`{fname}`已经弃用，调用它可能导能导致逻辑错误"));
         self.context.issues.add(super::Issue::new(
-            super::IssueInfo::from(&self.meta.info),
+            info,
             super::IssueLoc::from(&self.ast, loc),
         ));
     }
 }
 
-impl<'a> super::AbstractDetector for Detector5<'a> {
+impl<'a> super::AbstractDetector for Detector6<'a> {
     fn info() -> super::DetectorInfo {
         super::DetectorInfo {
-            no: 5,
+            no: 6,
             wiki: String::from(""),
-            title: String::from("位移运算溢出"),
-            verbose: String::from("位移运算时，保证位移数<被位移数的位数，确保左右位移不移除"),
+            title: String::from("调用了其他模块已经弃用的函数"),
+            verbose: String::from("调用了其他模块已经弃用的函数，可能导能导致逻辑错误"),
             level: super::DetectorLevel::Info,
         }
     }
 
     fn detect(context: &mut super::Context, ast: &super::Ast, detector: &mut super::Detector) -> anyhow::Result<()> {
-        Detector5::new(context, ast, detector).detect()
+        Detector6::new(context, ast, detector).detect()
     }
 }

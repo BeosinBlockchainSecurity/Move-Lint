@@ -22,22 +22,25 @@ pub trait AbstractDetector {
     fn detect(context: &mut Context, ast: &Ast, detector: &mut Detector) -> anyhow::Result<()>;
 }
 
+mod utils;
 mod detector1;
 mod detector2;
 mod detector3;
 mod detector4;
 mod detector5;
+mod detector6;
 
 pub struct Detectors(Vec<Detector>);
 
 impl Default for Detectors {
     fn default() -> Self {
         Self(vec![
-            // detector1::Detector1::detector(),
+            detector1::Detector1::detector(),
             detector2::Detector2::detector(),
             detector3::Detector3::detector(),
             detector4::Detector4::detector(),
             detector5::Detector5::detector(),
+            detector6::Detector6::detector(),
         ])
     }
 }
