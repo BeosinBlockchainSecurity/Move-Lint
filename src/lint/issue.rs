@@ -23,6 +23,11 @@ impl IssueInfo {
             description: None,
         }
     }
+
+    pub fn description(mut self, description: String) -> Self {
+        self.description = Some(description);
+        self
+    }
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

@@ -120,10 +120,9 @@ impl<'a> Detector6<'a> {
     }
 
     fn add_issue(&mut self, loc: &move_ir_types::location::Loc, fname: String) {
-        let mut info = super::IssueInfo::from(&self.meta.info);
-        info.description = Some(format!("函数`{fname}`已经弃用，调用它可能导能导致逻辑错误"));
+        let description = format!("函数`{fname}`已经弃用，调用它可能导能导致逻辑错误");
         self.context.issues.add(super::Issue::new(
-            info,
+            super::IssueInfo::from(&self.meta.info).description(description),
             super::IssueLoc::from(&self.ast, loc),
         ));
     }
