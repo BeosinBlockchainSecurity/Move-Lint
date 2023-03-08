@@ -81,8 +81,14 @@ impl<'a> Detector7<'a> {
                     }
                 }
             },
+            // (e1, e2, e3)
+            AST4::UnannotatedExp_::IfElse(e1, e2, e3) => {
+                exps.push(e1);
+                exps.push(e2);
+                exps.push(e3);
+            },
             // (e1, e2)
-            AST4::UnannotatedExp_::IfElse(_, e1, e2) |
+            AST4::UnannotatedExp_::While(e1, e2) |
             AST4::UnannotatedExp_::Mutate(e1, e2) => {
                 exps.push(e1);
                 exps.push(e2);
@@ -94,7 +100,6 @@ impl<'a> Detector7<'a> {
             AST4::UnannotatedExp_::Borrow(_, e, _) |
             AST4::UnannotatedExp_::TempBorrow(_, e) |
             AST4::UnannotatedExp_::Return(e) |
-            AST4::UnannotatedExp_::While(_, e) |
             AST4::UnannotatedExp_::Loop { has_break: _, body: e } |
             AST4::UnannotatedExp_::Assign(_, _, e) |
             AST4::UnannotatedExp_::Abort(e) |

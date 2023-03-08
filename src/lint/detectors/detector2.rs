@@ -74,7 +74,7 @@ impl<'a> Detector2<'a> {
                 }
             },
             AST3::Exp_::Block(block) => {
-                self.parse_func_block(block)
+                self.parse_func_block(block);
             },
             AST3::Exp_::Pack(_, _, _, vars) => {
                 exps.append(&mut vars.iter().map(|(_, _, (_, e))| e).collect::<Vec<&AST3::Exp>>())

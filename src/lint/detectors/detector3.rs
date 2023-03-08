@@ -56,7 +56,7 @@ impl<'a> Detector3<'a> {
                 exps.push(e);
             },
             AST4::UnannotatedExp_::Block(block) => {
-                self.parse_func_block(block)
+                self.parse_func_block(block);
             },
             AST4::UnannotatedExp_::Pack(_, _, _, vars) => {
                 exps.append(&mut vars.iter().map(|(_, _, (_, (_, e)))| e).collect::<Vec<&AST4::Exp>>())
@@ -73,8 +73,14 @@ impl<'a> Detector3<'a> {
                     }
                 }
             },
+            // (e1, e2, e3)
+            AST4::UnannotatedExp_::IfElse(e1, e2, e3) => {
+                exps.push(e1);
+                exps.push(e2);
+                exps.push(e3);
+            },
             // (e1, e2)
-            AST4::UnannotatedExp_::IfElse(_, e1, e2) |
+            AST4::UnannotatedExp_::While(e1, e2) |
             AST4::UnannotatedExp_::Mutate(e1, e2) |
             AST4::UnannotatedExp_::BinopExp(e1, _, _, e2) => {
                 exps.push(e1);
@@ -86,7 +92,6 @@ impl<'a> Detector3<'a> {
             AST4::UnannotatedExp_::Borrow(_, e, _) |
             AST4::UnannotatedExp_::TempBorrow(_, e) |
             AST4::UnannotatedExp_::Return(e) |
-            AST4::UnannotatedExp_::While(_, e) |
             AST4::UnannotatedExp_::Loop { has_break: _, body: e } |
             AST4::UnannotatedExp_::Assign(_, _, e) |
             AST4::UnannotatedExp_::Abort(e) |
