@@ -113,8 +113,8 @@ impl Issues {
         Self(vec![])
     }
 
-    pub fn to_vec(&self) -> Vec<&Issue> {
-        self.0.iter().map(|i|i).collect::<Vec<_>>()
+    pub fn into_vec(&self) -> &Vec<Issue> {
+        &self.0
     }
 
     pub fn contains(&self, x: &Issue) -> bool {
