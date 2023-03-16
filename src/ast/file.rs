@@ -64,3 +64,10 @@ impl FileSources {
         self.0.get(file_hash)
     }
 }
+
+impl core::ops::Index<FileHash> for FileSources {
+    type Output = FileSource;
+    fn index(&self, index: FileHash) -> &Self::Output {
+        &self.0[&index]
+    }
+}

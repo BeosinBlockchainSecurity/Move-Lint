@@ -3,14 +3,15 @@ use std::{
     collections::{BTreeMap, BTreeSet},
 };
 use anyhow::Result;
+use petgraph::algo::toposort;
 use move_command_line_common::env::get_bytecode_version_from_env;
-use move_model::{model::GlobalEnv, options::ModelBuilderOptions, run_model_builder_with_options};
+use move_model::{options::ModelBuilderOptions, run_model_builder_with_options};
 use move_abigen::{Abigen, AbigenOptions};
 use move_package::{
     BuildConfig,
     resolution::resolution_graph::{ResolvedPackage, ResolvedTable, ResolvedGraph, Renaming},
     compilation::compiled_package::CompiledUnitWithSource,
-    source_package::parsed_manifest::SourceManifest,
+    source_package::parsed_manifest::{SourceManifest, PackageName},
 };
 use move_symbol_pool::symbol::Symbol;
 use move_compiler::{
@@ -49,40 +50,25 @@ pub struct SourceInfo {
 #[derive(Debug, Clone)]
 pub struct PackageAst {
     pub source_info: SourceInfo,
-    pub build_options: BuildConfig,
     pub full_ast: FullyAst,
     /// filename -> json bytes for ScriptABI. Can then be used to generate transaction builders in
     /// various languages.
-    pub abis: Option<Vec<(String, Vec<u8>)>>,
+    abis: Option<Vec<(String, Vec<u8>)>>,
+    pub build_options: BuildConfig,
+    pub resolution_graph: ResolvedGraph,
 }
 
 impl PackageAst {
-    pub fn build_all(
-        resolved_package: ResolvedPackage,
-        transitive_dependencies: Vec<(
-            /* name */ Symbol,
-            /* is immediate */ bool,
-            /* source paths */ Vec<Symbol>,
-            /* address mapping */ &ResolvedTable,
-        )>,
-        resolution_graph: &ResolvedGraph,
+    pub fn build(
+        resolution_graph: ResolvedGraph,
     ) -> Result<Self> {
-        let transitive_dependencies = transitive_dependencies
-            .into_iter()
-            .map(|(name, _is_immediate, source_paths, address_mapping)| {
-                (name, source_paths, address_mapping)
-            })
-            .collect::<Vec<_>>();
-        let root_package_name = resolved_package.source_package.package.name;
+        resolution_graph.check_cyclic_dependency()?;
+        let root_package_path = &resolution_graph.root_package_path;
+        let root_package = resolution_graph.get_root_package();
 
-        // gather source/dep files with their address mappings
-        let (sources_package_paths, deps_package_paths) = make_source_and_deps_for_compiler(
-            resolution_graph,
-            &resolved_package,
-            transitive_dependencies,
-        )?;
-        let mut paths = deps_package_paths.clone();
-        paths.push(sources_package_paths.clone());
+        let (sources_package_paths, deps_package_paths) = resolution_graph.get_root_package_paths()?;
+        let mut paths = deps_package_paths;
+        paths.push(sources_package_paths);
 
         let fully_compiled_program = match CompilerModule::construct_pre_compiled_lib(
             paths,
@@ -94,13 +80,48 @@ impl PackageAst {
                 diagnostics::report_diagnostics(&files, diags);
             }
         };
-        let file_map = &fully_compiled_program.files;
-        let all_compiled_units = &fully_compiled_program.compiled;
+
+        let package_ast = Self {
+            source_info: SourceInfo {
+                manifest: root_package.source_package.clone(),
+                path: if root_package_path.to_str().unwrap_or("").eq(".") {
+                    std::env::current_dir().unwrap_or(root_package_path.clone())
+                } else {
+                    root_package_path.clone()
+                },
+                files: FileSources::from(fully_compiled_program.files),
+            },
+            full_ast: FullyAst {
+                parser: fully_compiled_program.parser,
+                expansion: fully_compiled_program.expansion,
+                naming: fully_compiled_program.naming,
+                typing: fully_compiled_program.typing,
+                hlir: fully_compiled_program.hlir,
+                cfgir: fully_compiled_program.cfgir,
+                compiled: fully_compiled_program.compiled,
+            },
+            abis: None,
+            build_options: resolution_graph.build_options.clone(),
+            resolution_graph,
+        };
+
+        Ok(package_ast)
+    }
+
+    pub fn abis(&mut self) -> Result<Vec<(String, Vec<u8>)>> {
+        if let Some(ret) = &self.abis {
+            return Ok(ret.clone());
+        }
+        let root_package_name = self.resolution_graph.root_package.package.name;
+        let (sources_package_paths, deps_package_paths) = self.resolution_graph.get_root_package_paths()?;
+
+        let file_map = &self.source_info.files;
+        let all_compiled_units = &self.full_ast.compiled;
 
         let mut root_compiled_units = vec![];
         let mut deps_compiled_units = vec![];
         for annot_unit in all_compiled_units {
-            let source_path = PathBuf::from(file_map[&annot_unit.loc().file_hash()].0.as_str());
+            let source_path = PathBuf::from(file_map[annot_unit.loc().file_hash()].filename());
             let package_name = match &annot_unit {
                 compiled_unit::CompiledUnitEnum::Module(m) => m.named_module.package_name.unwrap(),
                 compiled_unit::CompiledUnitEnum::Script(s) => s.named_script.package_name.unwrap(),
@@ -116,55 +137,13 @@ impl PackageAst {
             }
         }
 
-        let mut compiled_abis = None;
-        if resolution_graph.build_options.generate_abis {
-            let model = run_model_builder_with_options(
-                vec![sources_package_paths],
-                deps_package_paths,
-                ModelBuilderOptions::default(),
-            )?;
-
-            if resolution_graph.build_options.generate_abis {
-                compiled_abis = Some(Self::build_abis(
-                    get_bytecode_version_from_env(),
-                    &model,
-                    &root_compiled_units,
-                ));
-            }
-        };
-
-        let package_ast = Self {
-            source_info: SourceInfo {
-                manifest: resolved_package.source_package,
-                path: if resolution_graph.root_package_path.to_str().unwrap_or("").eq(".") {
-                    std::env::current_dir().unwrap_or(resolution_graph.root_package_path.clone())
-                } else {
-                    resolution_graph.root_package_path.clone()
-                },
-                files: FileSources::from(fully_compiled_program.files),
-            },
-            build_options: resolution_graph.build_options.clone(),
-            full_ast: FullyAst {
-                parser: fully_compiled_program.parser,
-                expansion: fully_compiled_program.expansion,
-                naming: fully_compiled_program.naming,
-                typing: fully_compiled_program.typing,
-                hlir: fully_compiled_program.hlir,
-                cfgir: fully_compiled_program.cfgir,
-                compiled: fully_compiled_program.compiled,
-            },
-            abis: compiled_abis,
-        };
-
-        Ok(package_ast)
-    }
-
-    fn build_abis(
-        bytecode_version: Option<u32>,
-        model: &GlobalEnv,
-        compiled_units: &[CompiledUnitWithSource],
-    ) -> Vec<(String, Vec<u8>)> {
-        let bytecode_map: BTreeMap<_, _> = compiled_units
+        let model = run_model_builder_with_options(
+            vec![sources_package_paths],
+            deps_package_paths,
+            ModelBuilderOptions::default(),
+        )?;
+        let bytecode_version = get_bytecode_version_from_env();
+        let bytecode_map: BTreeMap<_, _> = root_compiled_units
             .iter()
             .map(|unit| match &unit.unit {
                 compiled_unit::CompiledUnit::Script(script) => (
@@ -182,9 +161,72 @@ impl PackageAst {
             output_directory: "".to_string(),
             ..AbigenOptions::default()
         };
-        let mut abigen = Abigen::new(model, &abi_options);
+        let mut abigen = Abigen::new(&model, &abi_options);
         abigen.gen();
-        abigen.into_result()
+        let abis = abigen.into_result();
+        self.abis = Some(abis.clone());
+        Ok(abis)
+    }
+}
+
+pub trait TraitResolvedGraph {
+    /// 检查所有包中是否存在循环依赖
+    fn check_cyclic_dependency(&self) -> Result<Vec<PackageName>>;
+    /// root_package
+    fn get_root_package(&self) -> &ResolvedPackage;
+    /// root_package 及其所有依赖包的所有源码文件路径
+    fn get_root_package_paths(&self) -> Result<(
+        /* sources */ PackagePaths,
+        /* deps */ Vec<PackagePaths>,
+    )>;
+    /// root_package 的所有依赖包
+    fn get_root_package_transitive_dependencies(&self) -> BTreeSet<PackageName>;
+    /// root_package 的直接依赖包
+    fn get_root_package_immediate_dependencies(&self) -> BTreeSet<PackageName>;
+}
+
+impl TraitResolvedGraph for ResolvedGraph {
+    fn check_cyclic_dependency(&self) -> Result<Vec<PackageName>> {
+        let mut sorted_deps = match toposort(&self.graph, None) {
+            Ok(nodes) => nodes,
+            Err(err) => {
+                // Is a DAG after resolution otherwise an error should be raised from that.
+                anyhow::bail!("IPE: Cyclic dependency found after resolution {:?}", err)
+            }
+        };
+        sorted_deps.reverse();
+        return Ok(sorted_deps);
+    }
+
+    fn get_root_package(&self) -> &ResolvedPackage {
+        &self.package_table[&self.root_package.package.name]
+    }
+
+    fn get_root_package_paths(&self) -> Result<(
+        /* sources */ PackagePaths,
+        /* deps */ Vec<PackagePaths>,
+    )> {
+        let root_package = self.get_root_package();
+
+        let transitive_dependencies = self.get_root_package_transitive_dependencies()
+            .into_iter()
+            .map(|package_name| {
+                let dep_package = self.package_table.get(&package_name).unwrap();
+                let dep_source_paths = dep_package.get_sources(&self.build_options).unwrap();
+                // (name, source paths, address mapping)
+                (package_name, dep_source_paths, &dep_package.resolution_table)
+            })
+            .collect();
+
+        make_source_and_deps_for_compiler(&self, root_package, transitive_dependencies)
+    }
+
+    fn get_root_package_transitive_dependencies(&self) -> BTreeSet<PackageName> {
+        self.get_root_package().transitive_dependencies(&self)
+    }
+
+    fn get_root_package_immediate_dependencies(&self) -> BTreeSet<PackageName> {
+        self.get_root_package().immediate_dependencies(&self)
     }
 }
 
