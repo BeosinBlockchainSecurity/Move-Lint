@@ -1,9 +1,11 @@
 use serde::{ser::{self, SerializeStruct, SerializeSeq}, Serialize};
 use super::{Ast, DetectorInfo, DetectorLevel};
 
+pub type IssueInfoNo = u16;
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct IssueInfo {
-    pub no: u16,
+    pub no: IssueInfoNo,
     pub wiki: String,
     pub title: String,
     pub verbose: String,
@@ -30,12 +32,16 @@ impl IssueInfo {
     }
 }
 
+
+pub type IssueLocLine = u32;
+pub type IssueLocIndex = u32;
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct IssueLoc {
     pub file: String,
-    pub start: u32,
-    pub end: u32,
-    pub lines: Vec<u32>,
+    pub start: IssueLocIndex,
+    pub end: IssueLocIndex,
+    pub lines: Vec<IssueLocLine>,
 }
 
 impl IssueLoc {
@@ -44,8 +50,8 @@ impl IssueLoc {
             let range = loc.usize_range();
             Self {
                 file: f.filename(),
-                start: loc.start() as u32,
-                end: loc.end() as u32,
+                start: loc.start() as IssueLocIndex,
+                end: loc.end() as IssueLocIndex,
                 lines: f.get_lines(range),
             }
         } else {

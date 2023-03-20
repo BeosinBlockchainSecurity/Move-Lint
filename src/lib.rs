@@ -7,7 +7,7 @@ use clap::Parser;
 use ast::{AstConfig, PackageAst};
 use lint::{LintConfig};
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Default)]
 #[clap(author, version, about)]
 pub struct Config {
     /// Path to a package which the command should be run with respect to.
@@ -20,7 +20,7 @@ pub struct Config {
 
     /// Package build options
     #[clap(flatten)]
-    pub build_config: AstConfig,
+    pub ast_config: AstConfig,
 
     /// Lint options
     #[clap(flatten)]

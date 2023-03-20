@@ -23,14 +23,14 @@ pub trait AbstractDetector {
 }
 
 mod utils;
-mod detector1;
-mod detector2;
-mod detector3;
-mod detector4;
-mod detector5;
-mod detector6;
-mod detector7;
-mod detector8;
+pub mod detector1;
+pub mod detector2;
+pub mod detector3;
+pub mod detector4;
+pub mod detector5;
+pub mod detector6;
+pub mod detector7;
+pub mod detector8;
 
 pub struct Detectors(Vec<Detector>);
 
@@ -52,6 +52,14 @@ impl Default for Detectors {
 impl Detectors {
     pub fn new() -> Self {
         Self(vec![])
+    }
+
+    pub fn from(v: Vec<Detector>) -> Self {
+        Self(v)
+    }
+
+    pub fn meta(self) -> Vec<Detector> {
+        self.0
     }
 
     pub fn contains(&self, x: &Detector) -> bool {

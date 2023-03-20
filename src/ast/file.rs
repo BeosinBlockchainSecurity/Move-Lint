@@ -5,6 +5,8 @@ use std::{
 use move_compiler::diagnostics;
 use move_command_line_common::files::FileHash;
 
+pub type FileLine = u32;
+
 #[derive(Debug, Clone)]
 pub struct FileSource {
     filename: String,
@@ -31,7 +33,7 @@ impl FileSource {
         self.content.clone()
     }
 
-    pub fn get_lines(&self, range: Range<usize>) -> Vec<u32> {
+    pub fn get_lines(&self, range: Range<usize>) -> Vec<FileLine> {
         let lines_count = self.content[range.clone()].split('\n').collect::<Vec<_>>().len() as u32;
         let start_line = self.content[0..range.end].split('\n').collect::<Vec<_>>().len() as u32 - lines_count + 1;
         let end_line = start_line + lines_count;

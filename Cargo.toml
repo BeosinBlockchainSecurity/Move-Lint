@@ -27,3 +27,6 @@ move-symbol-pool = { git = "https://github.com/move-language/move", rev = "f9765
 move-model = { git = "https://github.com/move-language/move", rev = "f976503ec92e6942eac1c05dd8231918d07e0af6" }
 move-abigen = { git = "https://github.com/move-language/move", rev = "f976503ec92e6942eac1c05dd8231918d07e0af6" }
 move-command-line-common = { git = "https://github.com/move-language/move", rev = "f976503ec92e6942eac1c05dd8231918d07e0af6" }
+
+[dev-dependencies]
+regex = "1.1.8"

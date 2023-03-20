@@ -27,37 +27,41 @@ impl TraitAstConfig for BuildConfig {
     }
 }
 
-fn reroot_path(path: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+fn handle_reroot_path<T, F>(path: Option<PathBuf>, f: F) -> Result<T>
+where F: FnOnce(PathBuf) -> Result<T> {
     let path = path.unwrap_or_else(|| PathBuf::from("."));
     // Always root ourselves to the package root, and then compile relative to that.
     let rooted_path = SourcePackageLayout::try_find_root(&path.canonicalize()?)?;
+    let pop = std::env::current_dir().unwrap();
     std::env::set_current_dir(&rooted_path).unwrap();
-
-    Ok(PathBuf::from("."))
+    let ret = f(PathBuf::from("."));
+    std::env::set_current_dir(pop).unwrap();
+    return ret;
 }
 
 pub fn build_ast(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
     let config = config.get_meta();
-    let rerooted_path = reroot_path(path)?;
-    let architecture = config.architecture.unwrap_or(Architecture::Move);
-    match architecture {
-        Architecture::Move | Architecture::AsyncMove => {
-            return config.compile_ast(&rerooted_path, &mut std::io::stdout());
+    handle_reroot_path(path, |rerooted_path| {
+        let architecture = config.architecture.unwrap_or(Architecture::Move);
+        match architecture {
+            Architecture::Move | Architecture::AsyncMove => {
+                return config.compile_ast(&rerooted_path, &mut std::io::stdout());
+            }
+            Architecture::Ethereum => {
+                anyhow::bail!("The Ethereum architecture is not supported.");
+            }
         }
-        Architecture::Ethereum => {
-            anyhow::bail!("The Ethereum architecture is not supported.");
-        }
-    }
+    })
 }
 
 pub fn _main(path: Option<PathBuf>, config: AstConfig) -> Result<PackageAst> {
     build_ast(path, config).and_then(|ast| {
         let data =format!("{:#?}", ast);
-            let p = ast.source_info.path.join("output").join("ast.json");
-            std::fs::create_dir_all(&p.parent().unwrap())?;
-            let mut writer = std::fs::File::create(p).expect("Open error: {p}");
-            writer.write(data.as_bytes()).unwrap();
+        let p = ast.source_info.path.join("output").join("ast.json");
+        std::fs::create_dir_all(&p.parent().unwrap())?;
+        let mut writer = std::fs::File::create(p).expect("Open error: {p}");
+        writer.write(data.as_bytes()).unwrap();
 
-            Ok(ast)
+        Ok(ast)
     })
 }

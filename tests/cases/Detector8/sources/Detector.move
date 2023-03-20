@@ -1,0 +1,1 @@
+module NamedAddr::Detector {}

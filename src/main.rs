@@ -2,7 +2,7 @@ use clap::Parser;
 
 fn main() {
     let args = move_lint::Config::parse();
-    let ast = match move_lint::gen_move_ast(args.package_path, args.build_config) {
+    let ast = match move_lint::gen_move_ast(args.package_path, args.ast_config) {
         Ok(ast) => ast,
         Err(err) => {
             eprintln!("{:#?}", err);

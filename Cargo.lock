@@ -1114,6 +1114,7 @@ dependencies = [
  "named-lock",
  "once_cell",
  "petgraph 0.5.1",
+ "regex",
  "serde 1.0.152",
  "serde_json",
  "whoami",

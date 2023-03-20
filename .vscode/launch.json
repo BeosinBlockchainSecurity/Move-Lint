@@ -15,8 +15,19 @@
             },
             "args": [
                 "-p",
-                "${workspaceFolder}/testcases/Detector1"
+                "${workspaceFolder}/tests/cases/Detector1"
             ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "move-lint test",
+            "cargo": {
+                "args": [
+                    "test",
+                ]
+            },
             "cwd": "${workspaceFolder}"
         }
     ]
