@@ -10,9 +10,9 @@ pub struct Detector6<'a> {
 
 impl<'a> Detector6<'a> {
     fn new(context: &'a mut super::Context, ast: &'a super::Ast, detector: &'a mut super::Detector) -> Self {
-        // 停用的函数集合
+        // TODO: 补全已弃用函数集合
+        // 弃用的函数集合
         let mut deprecated_funcs = std::collections::HashSet::new();
-        // Todo: leocll，哪些函数已弃用
         deprecated_funcs.insert(format!("{}::NFT::register", utils::account::fmt_address_hex("0x1")));
         Self {
             context,

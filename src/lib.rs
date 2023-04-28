@@ -8,7 +8,7 @@ use ast::{AstConfig, PackageAst};
 use lint::{LintConfig};
 
 #[derive(Debug, Parser, Default)]
-#[clap(author, version, about)]
+// #[clap(author, version, about)]
 pub struct Config {
     /// Path to a package which the command should be run with respect to.
     #[clap(long = "path", short = 'p', global = true, parse(from_os_str))]

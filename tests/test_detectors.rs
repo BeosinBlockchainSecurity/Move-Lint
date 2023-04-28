@@ -9,16 +9,6 @@ use move_lint::{
         IssueInfoNo,
         IssueLocLine,
         Issues,
-        // detectors::{
-        //     detector1::Detector1,
-        //     detector2::Detector2,
-        //     detector3::Detector3,
-        //     detector4::Detector4,
-        //     detector5::Detector5,
-        //     detector6::Detector6,
-        //     detector7::Detector7,
-        //     detector8::Detector8,
-        // }
     }
 };
 
@@ -27,8 +17,6 @@ type FileIssueTags = HashMap<String, IssueTags>;
 
 fn parse_issue_tags(text: String) -> IssueTags {
     use regex::{Regex, Captures};
-    // /*xxx*/ 或者 //xxx
-    // let reg = Regex::new(r"/\*[\s\S]*?\*/|//.*").unwrap();
     // /*xxx*/
     let reg = Regex::new(r"/\*[\s\S]*?\*/").unwrap();
     let tag_reg = Regex::new(r"//[ ]*<Issue(:\d{1,}){1,}>").unwrap();
@@ -57,18 +45,6 @@ fn parse_issue_tags(text: String) -> IssueTags {
             })
         }
     }).collect()
-}
-
-#[test]
-fn test_parse_issue_tags() {
-    let text = "/*fdasfas // fdas // <Issue:1> 
-    // <Issue:2> */
-    fdas// leocll
-    // <Issue:4>
-    fdsa// <Issue:5>
-    fdsa// <Issue:6:7>".to_string();
-    let tags = parse_issue_tags(text);
-    assert_eq!(tags, HashMap::from([(5, vec![5]), (6, vec![6, 7])]));
 }
 
 fn run_detector(path: PathBuf, detector: Detector) -> Result<(Issues, FileIssueTags)> {
@@ -120,36 +96,3 @@ fn test_detectors() {
         test_detector(detector);
     }
 }
-
-// #[test]
-// fn test_detector1() {
-//     test_detector(Detector1::detector())
-// }
-// #[test]
-// fn test_detector2() {
-//     test_detector(Detector2::detector())
-// }
-// #[test]
-// fn test_detector3() {
-//     test_detector(Detector3::detector())
-// }
-// #[test]
-// fn test_detector4() {
-//     test_detector(Detector4::detector())
-// }
-// #[test]
-// fn test_detector5() {
-//     test_detector(Detector5::detector())
-// }
-// #[test]
-// fn test_detector6() {
-//     test_detector(Detector6::detector())
-// }
-// #[test]
-// fn test_detector7() {
-//     test_detector(Detector7::detector())
-// }
-// #[test]
-// fn test_detector8() {
-//     test_detector(Detector8::detector())
-// }
