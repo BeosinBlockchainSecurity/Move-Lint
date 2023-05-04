@@ -1,11 +1,11 @@
 # Move Lint
-Move语言的静态检测工具。工具只需要用户传入智能合约，就能自动化的发现合约中的潜在安全隐患，定位漏洞产生的位置，增强合约的安全性。
+A static detection tool for Move language. The tool takes a smart contract as input and can automatically discover potential security vulnerabilities in the contract, locate the codes which generate the vulnerabilities, and enhance the security of the contract.   
 
-工具主要包含两大方面的检测：
-1. 代码规范性检测。此项针对合约编写时的一些代码规范进行检测，不规范的代码编写引发安全问题的可能性会大大提高。
-2. 常规安全问题检测。此项针对合约中常见的安全问题进行检测。常规安全问题是所有合约都可能出现的安全问题，与业务逻辑无关。
+The tool mainly includes two types of detection:
+1. Code conventions detection. It detects any violations of certain code conventions during the development of a smart contract. The possibility of introducing security vulnerabilities is greatly increased by inappropriate code writing.
+2. Regular security issues detection. It detects regular security issues in the contracts. Regular security issues are issues that may exist in any contract and are independent of business logic, e.g. division before multiplication.
 
-工具自带检测[规则库](src/lint/detectors/README.md)，提供了方便的增删接口，可以随着Move合约业务的发展，快速适配新的检测规则，提高工具的检测能力。
+The tool has a [detection rule library](src/lint/detectors/README.md), providing convenient addition and deletion interfaces. It can quickly adapt to new detection rules and improve its detection abilities as the business development of the Move smart contracts.
 
 # Development
 
@@ -40,8 +40,8 @@ OPTIONS:
 ```
 no: 1
 wiki: 
-title: 参数校验可以放在首行
-verbose: 参数校验的assert可放在函数开头，快速失败，省gas
+title: parameter validation can be placed in the first line
+verbose: Parameter validation with assertions can be placed at the beginning of functions. If failed, gas can be saved.
 level: Warning
 description: None
 file: ./sources/Detector.move
@@ -51,8 +51,8 @@ lines: [5]
 
 no: 1
 wiki: 
-title: 参数校验可以放在首行
-verbose: 参数校验的assert可放在函数开头，快速失败，省gas
+title: parameter validation can be placed in the first line
+verbose: Parameter validation with assertions can be placed at the beginning of functions. If failed, gas can be saved.
 level: Warning
 description: None
 file: ./sources/Detector.move
@@ -62,8 +62,8 @@ lines: [9]
 
 no: 1
 wiki: 
-title: 参数校验可以放在首行
-verbose: 参数校验的assert可放在函数开头，快速失败，省gas
+title: parameter validation can be placed in the first line
+verbose: Parameter validation with assertions can be placed at the beginning of functions. If failed, gas can be saved.
 level: Warning
 description: None
 file: ./sources/Detector.move
