@@ -11,7 +11,7 @@ The tool has a [detection rule library](src/lint/detectors/README.md), providing
 
 ### Building
 ```bash
-git clone xx/xx/move-line.git
+git clone https://github.com/BeosinBlockchainSecurity/Move-Lint.git
 cd move-lint
 cargo build --release
 ```
