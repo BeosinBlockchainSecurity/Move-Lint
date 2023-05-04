@@ -28,7 +28,7 @@ USAGE:
 OPTIONS:
     -h, --help                   Print help information
     -j, --json                   Print results as json if available
-    -p, --path <PACKAGE_PATH   Path to a package which the command should be run with respect to
+    -p, --path <PACKAGE_PATH>    Path to a package which the command should be run with respect to
     -v                           Print additional diagnostics if available
     -V, --version                Print version information
 ```
