@@ -64,8 +64,8 @@ impl<'a> super::AbstractDetector for Detector2<'a> {
         super::DetectorInfo {
             no: 2,
             wiki: String::from(""),
-            title: String::from("assert错误码使用"),
-            verbose: String::from("对于assert的错误码未定义，直接使用0"),
+            title: String::from("assert error code usage"),
+            verbose: String::from("If assert error code is undefined, use 0 directly."),
             level: super::DetectorLevel::Info,
         }
     }

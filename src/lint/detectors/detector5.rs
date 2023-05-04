@@ -33,7 +33,7 @@ impl<'a> Detector5<'a> {
                                 AST1::BinOp_::Shl | AST1::BinOp_::Shr => {
                                     // e1 << e2 | e1 >> e2
                                     if let AST3::Type_::Apply(_, sp!(_, AST3::TypeName_::Builtin(sp!(_, typ))), _) = &e1.deref().ty.value {
-                                        // e1类型的位数
+                                        // bit of e1
                                         let v1_bit: Option<u128> = match &typ {
                                             AST3::BuiltinTypeName_::U8 => Some(8),
                                             AST3::BuiltinTypeName_::U16 => Some(16),
@@ -44,8 +44,7 @@ impl<'a> Detector5<'a> {
                                             _ => None,
                                         };
                                         if let Some(v1_bit) = v1_bit {
-                                            // AST4::UnannotatedExp_::Value 常量节点
-                                            // 只能判断常量，变量值无法判断
+                                            // AST4::UnannotatedExp_::Value // constant node
                                             if let AST4::UnannotatedExp_::Value(v2) = &e2.deref().exp.value {
                                                 let is_overflow = match &v2.value {
                                                     AST2::Value_::InferredNum(v) |
@@ -94,8 +93,8 @@ impl<'a> super::AbstractDetector for Detector5<'a> {
         super::DetectorInfo {
             no: 5,
             wiki: String::from(""),
-            title: String::from("位移运算溢出"),
-            verbose: String::from("位移运算时，保证位移数<被位移数的位数，确保左右位移不移除"),
+            title: String::from("shift operation overflow"),
+            verbose: String::from("Make sure that the second operand is less than the width in bits of the first operand and no overflow during a shift operation."),
             level: super::DetectorLevel::Info,
         }
     }

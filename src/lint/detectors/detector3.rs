@@ -48,8 +48,8 @@ impl<'a> super::AbstractDetector for Detector3<'a> {
         super::DetectorInfo {
             no: 3,
             wiki: String::from(""),
-            title: String::from("不必要的类型转换"),
-            verbose: String::from("不必要的类型转换，例如：let a: u64; a as u64;"),
+            title: String::from("unnecessary type conversion"),
+            verbose: String::from("Unnecessary type conversion, for example let a: u64; a as u64;"),
             level: super::DetectorLevel::Info,
         }
     }

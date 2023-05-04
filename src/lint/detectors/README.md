@@ -1,42 +1,42 @@
-# Move Lint Rules
+# Move Line Rules
 
-### 规则1：参数校验可以放在首行
-参数校验的assert可放在函数开头，快速失败，省gas
-- 源码：[detector1.rs](./detector1.rs)
-- 测试用例：[Detector1](../../../tests/cases/Detector1)
+### Rule 1: parameter validation can be placed in the first line
+Parameter validation with assertions can be placed at the beginning of functions. If failed, gas can be saved.
+- source code: [detector1.rs](./detector1.rs)
+- test case: [Detector1](../../../tests/cases/Detector1)
 
-### 规则2：assert错误码使用
-对于assert的错误码未定义，直接使用0
-- 源码：[detector2.rs](./detector2.rs)
-- 测试用例：[Detector2](../../../tests/cases/Detector2)
+### Rule 2: assert error code usage
+If assert error code is undefined, use 0 directly.
+- source code: [detector2.rs](./detector2.rs)
+- test case: [Detector2](../../../tests/cases/Detector2)
 
-### 规则3：不必要的类型转换
-不必要的类型转换，例如：let a: u64; a as u64;
-- 源码：[detector3.rs](./detector3.rs)
-- 测试用例：[Detector3](../../../tests/cases/Detector3)
+### Rule 3: unnecessary type conversion
+Unnecessary type conversion, for example let a: u64; a as u64;
+- source code: [detector3.rs](./detector3.rs)
+- test case: [Detector3](../../../tests/cases/Detector3)
 
-### 规则4：未使用的private接口
-存在未使用的private接口
-- 源码：[detector4.rs](./detector4.rs)
-- 测试用例：[Detector4](../../../tests/cases/Detector4)
+### Rule 4: unused private interface
+Unused private interface exists.
+- source code: [detector4.rs](./detector4.rs)
+- test case: [Detector4](../../../tests/cases/Detector4)
 
-### 规则5：位移运算溢出
-位移运算时，保证位移数<被位移数的位数，确保左右位移不移除
-- 源码：[detector5.rs](./detector5.rs)
-- 测试用例：[Detector5](../../../tests/cases/Detector5)
+### Rule 5: shift operation overflow
+Make sure that the second operand is less than the width in bits of the first operand and no overflow during a shift operation.
+- source code: [detector5.rs](./detector5.rs)
+- test case: [Detector5](../../../tests/cases/Detector5)
 
-### 规则6：调用了其他模块已经弃用的函数
-调用了其他模块已经弃用的函数，可能导能导致逻辑错误
-- 源码：[detector6.rs](./detector6.rs)
-- 测试用例：[Detector6](../../../tests/cases/Detector6)
-- TODO：待补全已弃用的函数集合
+### Rule 6: call deprecated functions of other modules
+Call deprecated functions of other modules which may lead to logic errors.
+- source code: [detector6.rs](./detector6.rs)
+- test case: [Detector6](../../../tests/cases/Detector6)
+- TODO: the set of deprecated functions to be completed
 
-### 规则7：先乘后除
-先乘后除，先除后乘可能降低结果精度
-- 源码：[detector7.rs](./detector7.rs)
-- 测试用例：[Detector7](../../../tests/cases/Detector8)
+### Rule 7: multiplication comes before division
+Multiplication comes before division, otherwise the result precision may be lower.
+- source code: [detector7.rs](./detector7.rs)
+- test case: [Detector7](../../../tests/cases/Detector8)
 
-### 规则8：依赖库未明确版本
-依赖库版本应使用版本号或commit号，避免使用分支名
-- 源码：[detector8.rs](./detector8.rs)
-- 测试用例：[Detector8](../../../tests/cases/Detector8)
+### Rule 8: inexplicit version of dependent libraries
+The version of dependent libraries should be a version number or commit number and avoid to use branch names.
+- source code: [detector8.rs](./detector8.rs)
+- test case: [Detector8](../../../tests/cases/Detector8)

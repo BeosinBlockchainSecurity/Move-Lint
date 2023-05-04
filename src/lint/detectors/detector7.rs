@@ -23,7 +23,7 @@ impl<'a> Detector7<'a> {
                 func.visit_pre(&mut |exp, _| {
                     match &exp.exp.value {
                         AST4::UnannotatedExp_::BinopExp(e1, op, _, _) => {
-                            // 运算解析为外层到内层，例如：x / y * z => (e1 / e2) * e2
+                            // Operations are resolved from outer layer to inner layer, example: x / y * z => (e1 / e2) * e2
                             if let AST1::BinOp_::Mul = &op.value {
                                 // let mut has_div = false;
                                 // e1.visit_pre(&mut |e, stop| {
@@ -75,8 +75,8 @@ impl<'a> super::AbstractDetector for Detector7<'a> {
         super::DetectorInfo {
             no: 7,
             wiki: String::from(""),
-            title: String::from("先乘后除"),
-            verbose: String::from("先乘后除，先除后乘可能降低结果精度"),
+            title: String::from("multiplication comes before division"),
+            verbose: String::from("Multiplication comes before division, otherwise the result precision may be lower."),
             level: super::DetectorLevel::Info,
         }
     }

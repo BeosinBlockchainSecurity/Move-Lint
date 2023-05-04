@@ -23,7 +23,7 @@ impl<'a> Detector4<'a> {
         for (_, module_ident, module) in &self.ast.full_ast.typing.modules {
             for (loc, fname, func) in &module.functions {
                 if func.visibility == AST2::Visibility::Internal  {
-                    // 记录private函数
+                    // record private functions
                     private_funcs.insert(format!("{}::{}", module_ident, fname), loc);
                 }
             }
@@ -34,7 +34,7 @@ impl<'a> Detector4<'a> {
                     match &exp.exp.value {
                         AST4::UnannotatedExp_::ModuleCall(call) => {
                             let (module_ident, fname) = (&call.module.value, &call.name.0.value);
-                            // 移除被调用的private函数
+                            // remove called private functions
                             private_funcs.remove_entry(&format!("{}::{}", module_ident, fname));
                         },
                         _ => (),
@@ -61,8 +61,8 @@ impl<'a> super::AbstractDetector for Detector4<'a> {
         super::DetectorInfo {
             no: 4,
             wiki: String::from(""),
-            title: String::from("未使用的private接口"),
-            verbose: String::from("存在未使用的private接口"),
+            title: String::from("unused private interface"),
+            verbose: String::from("Unused private interface exists."),
             level: super::DetectorLevel::Info,
         }
     }

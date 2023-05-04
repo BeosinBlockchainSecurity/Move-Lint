@@ -42,7 +42,7 @@ impl<'a> Detector8<'a> {
     }
 
     fn add_issue(&mut self, package_name: &str) {
-        let description = format!("依赖库'{}'使用分支名代替版本可能导致错误", package_name);
+        let description = format!("Relying on libraries '{}' to use branch names instead of versions can result in errors", package_name);
         self.context.issues.add(super::Issue::new(
             super::IssueInfo::from(&self.meta.info).description(description),
             super::IssueLoc {
@@ -60,8 +60,8 @@ impl<'a> super::AbstractDetector for Detector8<'a> {
         super::DetectorInfo {
             no: 8,
             wiki: String::from(""),
-            title: String::from("依赖库未明确版本"),
-            verbose: String::from("依赖库版本应使用版本号或commit号，避免使用分支名"),
+            title: String::from("inexplicit version of dependent libraries"),
+            verbose: String::from("The version of dependent libraries should be a version number or commit number and avoid to use branch names."),
             level: super::DetectorLevel::Info,
         }
     }

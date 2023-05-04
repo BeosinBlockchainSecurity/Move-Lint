@@ -68,7 +68,7 @@ impl super::visitor::Visitor<AST4::Exp> for AST4::Exp {
             AST4::UnannotatedExp_::UnaryExp(_, e) |
             AST4::UnannotatedExp_::Annotate(e, _) => vec![e],
             // ()
-            AST4::UnannotatedExp_::Use(_) | // 貌似此节点在AST4貌似没用，被Move、Copy代替，待确认
+            AST4::UnannotatedExp_::Use(_) |
             AST4::UnannotatedExp_::Move { from_user: _, var: _ } |
             AST4::UnannotatedExp_::Copy { from_user: _, var: _ } |
             AST4::UnannotatedExp_::BorrowLocal(_, _) |

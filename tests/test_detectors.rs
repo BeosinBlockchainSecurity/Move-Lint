@@ -22,7 +22,7 @@ fn parse_issue_tags(text: String) -> IssueTags {
     let tag_reg = Regex::new(r"//[ ]*<Issue(:\d{1,}){1,}>").unwrap();
     reg.replace_all(text.as_str(), |caps: &Captures| {
         if let Some(s) = caps.get(0) {
-            // 替换为空格
+            // replace to space
             s.as_str().chars().map(|c| { if c == '\n' || c == '\r' { c } else { ' ' } }).collect()
         } else {
             "".to_string()
@@ -30,7 +30,6 @@ fn parse_issue_tags(text: String) -> IssueTags {
     })
     .split('\n').enumerate().filter_map(|(idx, s)| {
         if s.trim_start().starts_with("//") {
-            // 以//为行开头或没有匹配到Issue标签
             None
         } else {
             tag_reg.captures(s).and_then(|x| {
@@ -81,7 +80,7 @@ fn test_detector(detector: Detector) {
                     .or_insert(HashMap::from([(issue.loc.lines[0], vec![issue.info.no])]));
             });
             println!("{} => {:?}: \n\t{:?} \n\t{:?}", &no, &t_path, &i_tags, tags);
-            assert!(&i_tags == tags, "检测项错误：{}", no);
+            assert!(&i_tags == tags, "Detector error: {}", no);
         },
         Err(error) => {
             println!("{} => {:?}: \n\t{:?}", &no, &t_path, &error);

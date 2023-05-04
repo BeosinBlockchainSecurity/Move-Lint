@@ -170,18 +170,18 @@ impl PackageAst {
 }
 
 pub trait TraitResolvedGraph {
-    /// 检查所有包中是否存在循环依赖
+    /// Check all packages for cyclic dependencies
     fn check_cyclic_dependency(&self) -> Result<Vec<PackageName>>;
     /// root_package
     fn get_root_package(&self) -> &ResolvedPackage;
-    /// root_package 及其所有依赖包的所有源码文件路径
+    /// root_package and all the source file paths of all its dependent packages
     fn get_root_package_paths(&self) -> Result<(
         /* sources */ PackagePaths,
         /* deps */ Vec<PackagePaths>,
     )>;
-    /// root_package 的所有依赖包
+    /// All dependency packages for root_package
     fn get_root_package_transitive_dependencies(&self) -> BTreeSet<PackageName>;
-    /// root_package 的直接依赖包
+    /// Direct dependency package of root_package
     fn get_root_package_immediate_dependencies(&self) -> BTreeSet<PackageName>;
 }
 

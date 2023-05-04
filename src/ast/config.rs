@@ -61,7 +61,6 @@ pub struct AstConfig {
 
 impl AstConfig {
     pub fn get_meta(&self) -> BuildConfig {
-        // 使用序列化
         // if let Ok(v1) = serde_json::to_value(&self) {
         //     if let Ok(v2) = serde_json::from_value::<BuildConfig>(v1) {
         //         return v2;

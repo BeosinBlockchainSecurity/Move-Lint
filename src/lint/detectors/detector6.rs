@@ -10,8 +10,7 @@ pub struct Detector6<'a> {
 
 impl<'a> Detector6<'a> {
     fn new(context: &'a mut super::Context, ast: &'a super::Ast, detector: &'a mut super::Detector) -> Self {
-        // TODO: 补全已弃用函数集合
-        // 弃用的函数集合
+        // deprecated functions set
         let mut deprecated_funcs = std::collections::HashSet::new();
         deprecated_funcs.insert(format!("{}::NFT::register", utils::account::fmt_address_hex("0x1")));
         Self {
@@ -45,7 +44,7 @@ impl<'a> Detector6<'a> {
     }
 
     fn add_issue(&mut self, loc: &move_ir_types::location::Loc, fname: String) {
-        let description = format!("函数`{fname}`已经弃用，调用它可能导能导致逻辑错误");
+        let description = format!("The function '{fname}' has been deprecated, and calling it may lead to a logical error");
         self.context.issues.add(super::Issue::new(
             super::IssueInfo::from(&self.meta.info).description(description),
             super::IssueLoc::from(&self.ast, loc),
@@ -58,8 +57,8 @@ impl<'a> super::AbstractDetector for Detector6<'a> {
         super::DetectorInfo {
             no: 6,
             wiki: String::from(""),
-            title: String::from("调用了其他模块已经弃用的函数"),
-            verbose: String::from("调用了其他模块已经弃用的函数，可能导能导致逻辑错误"),
+            title: String::from("call deprecated functions of other modules"),
+            verbose: String::from("Call deprecated functions of other modules which may lead to logic errors."),
             level: super::DetectorLevel::Info,
         }
     }

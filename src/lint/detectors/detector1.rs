@@ -86,14 +86,13 @@ impl<'a> Detector1<'a> {
                     self.top_assert_count += 1;
                 }
                 if let AST4::BuiltinFunction_::Assert(_) = func.value {
-                    // self.top_exp_count == self.top_assert_count，说明前面的语句全是assert，所以当前assert不需要检测
                     if self.top_exp_count != self.top_assert_count {
                         in_assert = true;
                     }
                 }
                 exps.push(e);
             },
-            AST4::UnannotatedExp_::Use(var) | // 貌似此节点在AST4貌似没用，被Move、Copy代替，待确认
+            AST4::UnannotatedExp_::Use(var) |
             AST4::UnannotatedExp_::Move { from_user: _, var } |
             AST4::UnannotatedExp_::Copy { from_user: _, var } => {
                 if in_assert && params.contains(var.0.value.as_str()) {
@@ -185,8 +184,8 @@ impl<'a> super::AbstractDetector for Detector1<'a> {
         super::DetectorInfo {
             no: 1,
             wiki: String::from(""),
-            title: String::from("参数校验可以放在首行"),
-            verbose: String::from("参数校验的assert可放在函数开头，快速失败，省gas"),
+            title: String::from("parameter validation can be placed in the first line"),
+            verbose: String::from("Parameter validation with assertions can be placed at the beginning of functions. If failed, gas can be saved."),
             level: super::DetectorLevel::Warning,
         }
     }
